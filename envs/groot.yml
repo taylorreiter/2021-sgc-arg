@@ -1,0 +1,6 @@
+channels:
+   - conda-forge
+   - bioconda
+   - defaults
+dependencies:
+   - groot=1.1.2 
