@@ -6,7 +6,7 @@ rule all:
     input: 
         expand("outputs/groot/{sample}_arg90_report.txt", sample = SAMPLES),
         "outputs/arg90_matches/arg90_matches_dedup.fna",
-        expand("outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.cdbg_ids.reads.gz", sample = SAMPLES)
+        expand("outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz", sample = SAMPLES)
 
 rule fastp:
     input:
@@ -174,8 +174,8 @@ rule spacegraphcats_one_agr:
         conf = "outputs/sgc_conf/{sample}_r1_conf.yml",
         reads = "outputs/abundtrim/{sample}.abundtrim.fq.gz"
     output:
-        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.cdbg_ids.reads.gz",
-        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.contigs.sig"
+        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz",
+        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/cfxA4_AY769933.fna.contigs.sig"
     params: outdir = "outputs/sgc_arg_queries"
     conda: "envs/spacegraphcats.yml"
     resources:
