@@ -1,0 +1,8 @@
+catlas_base: HSM6XRQK
+input_sequences:
+- outputs/abundtrim/HSM6XRQK.abundtrim.fq.gz
+ksize: 31
+radius: 1
+search:
+- outputs/arg90_matches/cfxA4_AY769933.fna
+searchquick: outputs/arg90_matches/cfxA4_AY769933.fna
