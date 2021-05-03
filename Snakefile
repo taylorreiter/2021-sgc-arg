@@ -5,7 +5,8 @@ SAMPLES = ['HSM67VF9', 'HSM67VFD', 'HSM67VFJ', 'HSM6XRQB',
 rule all:
     input: 
         expand("outputs/groot/{sample}_arg90_report.txt", sample = SAMPLES),
-        "outputs/arg90_matches/arg90_matches_dedup.fna"
+        "outputs/arg90_matches/arg90_matches_dedup.fna",
+        expand("outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.cdbg_ids.reads.gz", sample = SAMPLES)
 
 rule fastp:
     input:
