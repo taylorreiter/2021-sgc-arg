@@ -182,5 +182,5 @@ rule spacegraphcats_one_agr:
         mem_mb = 64000
     threads: 1
     shell:'''
-    spacegraphcats {input.conf} extract_contigs extract_reads --nolock --outdir={params.outdir}  
+    python -m spacegraphcats run {input.conf} extract_contigs extract_reads --nolock --outdir={params.outdir}  
     '''
