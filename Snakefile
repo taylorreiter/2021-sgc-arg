@@ -165,4 +165,21 @@ rule remove_duplicate_groot_matches:
         mem_mb=4000
     shell:'''
     cat {input} | seqkit rmdup -s -o {output}
-    ''' 
+    '''
+
+rule spacegraphcats_one_agr:
+    input: 
+        query = "outputs/arg90_matches/cfxA4_AY769933.fna", 
+        conf = "outputs/sgc_conf/{sample}_r1_conf.yml",
+        reads = "outputs/abundtrim/{sample}.abundtrim.fq.gz"
+    output:
+        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.cdbg_ids.reads.gz",
+        "outputs/sgc_genome_queries/{library}_k31_r1_search_oh0/{sample}.contigs.sig"
+    params: outdir = "outputs/sgc_genome_queries"
+    conda: "envs/spacegraphcats.yml"
+    resources:
+        mem_mb = 64000
+    threads: 1
+    shell:'''
+    spacegraphcats {input.conf} extract_contigs extract_reads --nolock --outdir={params.outdir}  
+    '''
