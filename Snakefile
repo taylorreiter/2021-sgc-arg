@@ -175,8 +175,8 @@ rule spacegraphcats_one_agr:
         reads = "outputs/abundtrim/{sample}.abundtrim.fq.gz"
     output:
         "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.cdbg_ids.reads.gz",
-        "outputs/sgc_genome_queries/{library}_k31_r1_search_oh0/{sample}.contigs.sig"
-    params: outdir = "outputs/sgc_genome_queries"
+        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/{sample}.contigs.sig"
+    params: outdir = "outputs/sgc_arg_queries"
     conda: "envs/spacegraphcats.yml"
     resources:
         mem_mb = 64000
