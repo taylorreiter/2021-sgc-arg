@@ -1,0 +1,6 @@
+channels:
+   - conda-forge
+   - bioconda
+   - defaults
+dependencies:
+   - seqkit=0.16.0 

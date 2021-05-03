@@ -3,7 +3,9 @@ SAMPLES = ['HSM67VF9', 'HSM67VFD', 'HSM67VFJ', 'HSM6XRQB',
            'HSM7CYY7', 'HSM7CYY9', 'HSM7CYYB', 'HSM7CYYD']
 
 rule all:
-    input: expand("outputs/groot/{sample}_arg90.bam", sample = SAMPLES)
+    input: 
+        expand("outputs/groot/{sample}_arg90_report.txt", sample = SAMPLES),
+        "outputs/arg90_matches/arg90_matches_dedup.fna"
 
 rule fastp:
     input:
@@ -64,7 +66,7 @@ rule kmer_trim_reads:
     '''
 
 rule download_groot_db:
-    output: "arg-annot.90"
+    output: directory("arg-annot.90")
     conda: "envs/groot.yml"
     threads: 1
     resources:
@@ -75,13 +77,13 @@ rule download_groot_db:
 
 rule index_groot_db:
     output: "groot-index"
-    input: "arg-annot.90"
+    input: directory("arg-annot.90")
     conda: "envs/groot.yml"
     threads: 8
     resources:
         mem_mb=64000
     shell:'''
-    groot index -m arg-annot.90 -i groot-index -w 100 -p 8
+    groot index -m {input} -i {output} -w 100 -p 8
     '''
 
 rule run_groot:
@@ -89,7 +91,7 @@ rule run_groot:
         index="groot-index",
         abundtrim="outputs/abundtrim/{sample}.abundtrim.fq.gz"
     output:
-        graph="outputs/groot/{sample}_arg90.graph",
+        graph=directory("outputs/groot/{sample}_arg90.graph"),
         bam="outputs/groot/{sample}_arg90.bam"
     conda: "envs/groot.yml"
     threads: 2
@@ -101,11 +103,66 @@ rule run_groot:
 
 rule report_groot:
     input: "outputs/groot/{sample}_arg90.bam"
-    output:
+    output: "outputs/groot/{sample}_arg90_report.txt"
     conda: "envs/groot.yml"
     threads: 1
     resources:
         mem_mb=16000
     shell:'''
-    groot report --bamFile {input} -c .9
+    groot report --bamFile {input} -c .9 > {output}
     '''
+
+rule combine_report_groot:
+    input: expand("outputs/groot/{sample}_arg90_report.txt", sample = SAMPLES)
+    output: "outputs/groot/all_arg90_report.txt"
+    threads: 1
+    resources:
+        mem_mb=1000
+    shell:'''
+    cat {input} > {output}
+    '''
+
+rule download_arg_db:
+    output: "inputs/arg_db/argannot-args.fna"
+    threads: 1
+    resources:
+        mem_mb=1000
+    shell:'''
+    wget -O {output} https://github.com/will-rowe/groot/raw/master/db/full-ARG-databases/arg-annot-db/argannot-args.fna
+    '''
+
+rule faidx_arg_db:
+    input: "inputs/arg_db/argannot-args.fna"
+    output: "inputs/arg_db/argannot-args.fna.fai"
+    conda: "envs/samtools.yml"
+    threads: 1
+    resources:
+        mem_mb=1000
+    shell:'''
+    samtools faidx {input}
+    '''
+
+rule extract_groot_matches:
+    input:
+        groot_report="outputs/groot/all_arg90_report.txt",
+        arg90="inputs/arg_db/argannot-args.fna",
+        arg90_faidx="inputs/arg_db/argannot-args.fna"
+    output: "outputs/arg90_matches/arg90_matches.fna"
+    threads: 1
+    resources:
+        mem_mb=4000
+    conda: "envs/samtools.yml"
+    shell:'''
+    samtools faidx {input.arg90} `cut -f1 {input.groot_report}` > {output}
+    '''
+
+rule remove_duplicate_groot_matches:
+    input: "outputs/arg90_matches/arg90_matches.fna"
+    output: "outputs/arg90_matches/arg90_matches_dedup.fna"
+    conda: "envs/seqkit.yml"
+    threads: 1
+    resources:
+        mem_mb=4000
+    shell:'''
+    cat {input} | seqkit rmdup -s -o {output}
+    ''' 
