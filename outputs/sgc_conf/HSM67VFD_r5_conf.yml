@@ -1,0 +1,8 @@
+catlas_base: HSM67VFD
+input_sequences:
+- outputs/abundtrim/HSM67VFD.abundtrim.fq.gz
+ksize: 31
+radius: 5
+search:
+- outputs/arg90_matches/cfxA4_AY769933.fna
+searchquick: outputs/arg90_matches/cfxA4_AY769933.fna
