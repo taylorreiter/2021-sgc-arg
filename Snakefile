@@ -8,7 +8,8 @@ rule all:
         expand("outputs/groot/{sample}_arg90_report.txt", sample = SAMPLES),
         expand("outputs/groot/{sample}_proportion_arg90_derived.csv", sample = SAMPLES),
         "outputs/arg90_matches/arg90_matches_dedup.fna",
-        expand("outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa", sample = SAMPLES, radius = RADIUS)
+        expand("outputs/bandage/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png", sample = SAMPLES, radius = RADIUS),
+        expand("outputs/gather/{sample}_r{radius}_cfxA4_AY769933.fna.contigs.csv", sample = SAMPLES, radius = RADIUS)
 
 rule fastp:
     input:
@@ -222,3 +223,36 @@ rule convert_to_gfa:
     shell:'''
     python ./scripts/convertToGFA.py {input} {output} 31
     '''
+
+rule bandage_plot_gfa:
+    input: 
+        gfa="outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa",
+        blastquery="outputs/arg90_matches/cfxA4_AY769933.fna"
+    output: "outputs/bandage/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png"
+    resources:
+        mem_mb = 4000
+    threads: 1
+    conda: "envs/bandage.yml"
+    shell:'''
+    Bandage image {input.gfa} {output} --query {input.blastquery}    
+    '''
+
+rule sourmash_gather_sgc_nbhd:
+    input: 
+        sig="outputs/sgc_arg_queries_r{radius}/{sample}_k31_r{radius}_search_oh0/cfxA4_AY769933.fna.contigs.sig",
+        db1="/home/irber/sourmash_databases/outputs/sbt/refseq-bacteria-x1e6-k31.sbt.zip",
+        db2="/home/irber/sourmash_databases/outputs/sbt/refseq-viral-x1e6-k31.sbt.zip",
+        db3="/home/irber/sourmash_databases/outputs/sbt/refseq-archaea-x1e6-k31.sbt.zip",
+        db4="/home/irber/sourmash_databases/outputs/sbt/refseq-fungi-x1e6-k31.sbt.zip",
+        db5="/home/irber/sourmash_databases/outputs/sbt/refseq-protozoa-x1e6-k31.sbt.zip",
+    output:
+        csv="outputs/gather/{sample}_r{radius}_cfxA4_AY769933.fna.contigs.csv",
+        matches="outputs/gather/{sample}_r{radius}_cfxA4_AY769933.fna.contigs.matches",
+    resources:
+        mem_mb = 128000
+    threads: 1
+    conda: "envs/spacegraphcats.yml"
+    shell:'''
+    sourmash gather -o {output.csv} --threshold-bp 0 --save-matches {output.matches} --scaled 2000 -k 31 {input.sig} {input.db1} {input.db2} {input.db3} {input.db4} {input.db5}
+    '''
+    
