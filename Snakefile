@@ -11,6 +11,7 @@ rule all:
         expand("outputs/bandage/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png", sample = SAMPLES, radius = RADIUS),
         expand("outputs/gather/{sample}_r{radius}_cfxA4_AY769933.fna.contigs.csv", sample = SAMPLES, radius = RADIUS)
 
+
 rule fastp:
     input:
         R1="inputs/raw/{sample}_R1.fastq.gz",
