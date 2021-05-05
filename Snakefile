@@ -1,12 +1,14 @@
 SAMPLES = ['HSM67VF9', 'HSM67VFD', 'HSM67VFJ', 'HSM6XRQB',
            'HSM6XRQI', 'HSM6XRQK', 'HSM6XRQM', 'HSM6XRQO',
            'HSM7CYY7', 'HSM7CYY9', 'HSM7CYYB', 'HSM7CYYD']
+RADIUS = ['1', '5', '10']
 
 rule all:
     input: 
         expand("outputs/groot/{sample}_arg90_report.txt", sample = SAMPLES),
+        expand("outputs/groot/{sample}_proportion_arg90_derived.csv", sample = SAMPLES),
         "outputs/arg90_matches/arg90_matches_dedup.fna",
-        expand("outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz", sample = SAMPLES)
+        expand("outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa", sample = SAMPLES, radius = RADIUS)
 
 rule fastp:
     input:
@@ -123,6 +125,19 @@ rule combine_report_groot:
     cat {input} > {output}
     '''
 
+rule calc_proportion_arg_reads_per_sample:
+    input: bam ="outputs/groot/{sample}_arg90.bam"
+    output: "outputs/groot/{sample}_proportion_arg90_derived.csv"
+    conda: "envs/samtools.yml"
+    threads: 1
+    resources:
+        mem_mb=2000
+    shell:'''
+    mapped=$(samtools view -c -F 4 {input.bam})
+    proportion=$(echo "scale=10 ; $mapped / 10000000" | bc)
+    printf "{wildcards.sample},$proportion" > {output}
+    '''
+    
 rule download_arg_db:
     output: "inputs/arg_db/argannot-args.fna"
     threads: 1
@@ -168,19 +183,42 @@ rule remove_duplicate_groot_matches:
     cat {input} | seqkit rmdup -s -o {output}
     '''
 
-rule spacegraphcats_one_agr:
+rule spacegraphcats_one_arg:
     input: 
         query = "outputs/arg90_matches/cfxA4_AY769933.fna", 
-        conf = "outputs/sgc_conf/{sample}_r1_conf.yml",
+        conf = "outputs/sgc_conf/{sample}_r{radius}_conf.yml",
         reads = "outputs/abundtrim/{sample}.abundtrim.fq.gz"
     output:
-        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz",
-        "outputs/sgc_arg_queries/{sample}_k31_r1_search_oh0/cfxA4_AY769933.fna.contigs.sig"
-    params: outdir = "outputs/sgc_arg_queries"
+        "outputs/sgc_arg_queries_r{radius}/{sample}_k31_r{radius}_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz",
+        "outputs/sgc_arg_queries_r{radius}/{sample}_k31_r{radius}_search_oh0/cfxA4_AY769933.fna.contigs.sig"
+    params: outdir = lambda wildcards: "outputs/sgc_arg_queries_r" + wildcards.radius
     conda: "envs/spacegraphcats.yml"
     resources:
         mem_mb = 64000
     threads: 1
     shell:'''
-    python -m spacegraphcats run {input.conf} extract_contigs extract_reads --nolock --outdir={params.outdir}  
+    python -m spacegraphcats run {input.conf} extract_contigs extract_reads --nolock --outdir={params.outdir} --rerun-incomplete 
+    '''
+
+rule bcalm_nbhd:
+    input: "outputs/sgc_arg_queries_r{radius}/{sample}_k31_r{radius}_search_oh0/cfxA4_AY769933.fna.cdbg_ids.reads.gz"
+    output: "outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.fa"
+    params: "outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz"
+    resources:
+        mem_mb = 4000
+    threads: 1
+    conda: "envs/spacegraphcats.yml"
+    shell:'''
+    bcalm -in {input} -out-dir outputs/bcalm/{wildcards.sample}_{wildcards.radius} -kmer-size 31 -abundance-min 1 -out {params}
+    '''
+
+rule convert_to_gfa:
+    input: "outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.fa"
+    output: "outputs/bcalm/{sample}_r{radius}/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.gfa"
+    resources:
+        mem_mb = 2000
+    threads: 1
+    conda: "envs/spacegraphcats.yml"
+    shell:'''
+    python ./scripts/convertToGFA.py {input} {output} 31
     '''
