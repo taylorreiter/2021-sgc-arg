@@ -1,0 +1,7 @@
+channels:
+   - conda-forge
+   - bioconda
+   - defaults
+dependencies:
+   - bandage=0.8.1
+   - blast=2.11.0
