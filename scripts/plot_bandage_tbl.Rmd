@@ -1,0 +1,35 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, message = F, warning = F)
+knitr::opts_knit$set(root.dir="..")
+```
+
+```{r library}
+library(knitr)
+library(dplyr)
+library(readr)
+```
+
+```{r metadata}
+hmp_metadata <- read_csv("https://ibdmdb.org/tunnel/products/HMP2/Metadata/hmp2_metadata.csv")
+h4017 <- hmp_metadata %>%
+  filter(data_type == "metagenomics") %>%
+  select(data_id = "External ID", week = week_num, antibiotics = "Antibiotics") %>%
+  filter(data_id %in% c('HSM67VF9', 'HSM67VFD', 'HSM67VFJ', 'HSM6XRQB',
+                        'HSM6XRQI', 'HSM6XRQK', 'HSM6XRQM', 'HSM6XRQO',
+                        'HSM7CYY7', 'HSM7CYY9', 'HSM7CYYB', 'HSM7CYYD'))
+```
+
+```{r}
+library(kableExtra)
+
+h4017$bandage_r1 <- sprintf('![](../outputs/bandage/%s_r1/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png){width=100px}', h4017$data_id)
+h4017$bandage_r5 <- sprintf('![](../outputs/bandage/%s_r5/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png){width=100px}', h4017$data_id)
+h4017$bandage_r10 <- sprintf('![](../outputs/bandage/%s_r10/cfxA4_AY769933.fna.cdbg_ids.reads.gz.unitigs.png){width=100px}', h4017$data_id)
+kable(h4017, col.names = c("ID", "Week", "Antibiotics", "R1", "R5", "R10")) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+# html to png - https://cloudconvert.com/html-to-png
+```
